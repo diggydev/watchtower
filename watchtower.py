@@ -71,9 +71,38 @@ def vote(poll_name=None):
     
 @app.route("/count/<poll_name>")
 def count(poll_name=None):
-    return "done."
+    votes = list()
+    s3 = boto3.resource('s3')
+    objects = s3.Bucket(s3bucket).objects.all()
+    for obj in objects:
+        if obj.key.startswith(poll_name + '/' + 'vote'):
+            voteFile = obj.key[len(poll_name + '/'):]
+            print(voteFile)
+            vote = read_from_s3(poll_name, obj.key[len(poll_name + '/'):])
+            print(vote)
+            votes.append(vote)
+    print(votes)
+
+def count1(votes):
+    quota = int(len(votes)/2) + 1
+    print("Quota " + str(quota))
+
+    currRoundVotes = dict()
+
+    for vote in votes:
+        for item in vote.items():
+            print(item[0])
+            print(item[1])
+            print("**")
+        
+
 
 if __name__ == "__main__":
-    app.run()
+    #app.run()
     #view_poll("cbc1")
     #print(read_from_s3("cbc_april", "poll.json"))
+#    count1([{'book1': '3', 'book2': '2', 'book3': '1'}, {'book1': '1', 'book2': '2', 'book3': '3'}, {'book1': '3', 'book2': '2', 'book3': '1'}])
+    count1([{'X': '1', 'L': '2', 'C': '3', 'A': '4'}, {'L': '1', 'X': '2', 'C': '3', 'A': '4'}, {'C': '1', 'X': '2', 'L': '3', 'A': '4'}, {'L': '1', 'C': '2', 'A': '3', 'X': '4'}, {'C': '1', 'A': '2', 'L': '3', 'X': '4'}, {'A': '1', 'L': '2', 'C': '3', 'X': '4'}, {'X': '1', 'L': '2', 'A': '3', 'C': '4'}, {'L': '1', 'C': '2', 'X': '3', 'A': '4'}, {'A': '1', 'L': '2', 'X': '3', 'C': '4'}, {'L': '1', 'C': '2', 'A': '3', 'X': '4'}, {'C': '1', 'X': '2', 'A': '3', 'L': '4'}])
+
+
+
