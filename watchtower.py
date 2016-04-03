@@ -2,7 +2,6 @@
 # AWS_ACCESS_KEY_ID
 # AWS_SECRET_ACCESS_KEY
 # AWS_S3_BUCKET
-# PORT
 
 from flask import Flask
 from flask import request
@@ -163,6 +162,6 @@ def build_count_str(votes):
         page += "The votes are " + str(votes) + '<br>'    
 
 if __name__ == "__main__":
-    app.run(port=os.environ['PORT'])
+    app.run()
 
 

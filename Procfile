@@ -1,1 +1,1 @@
-web: python watchtower.py
+web: gunicorn watchtower:app
