@@ -81,28 +81,82 @@ def count(poll_name=None):
             vote = read_from_s3(poll_name, obj.key[len(poll_name + '/'):])
             print(vote)
             votes.append(vote)
-    print(votes)
+    return '<html><body>' + build_count_str(votes) + '</body></html>'
 
-def count1(votes):
-    quota = int(len(votes)/2) + 1
-    print("Quota " + str(quota))
-
-    currRoundVotes = dict()
-
+def get_options(votes):
+    options = set()
     for vote in votes:
-        for item in vote.items():
-            print(item[0])
-            print(item[1])
-            print("**")
-        
+        options.update(vote.keys())
+    return options
 
+def find_eliminated(counted_votes):
+    min_count = sys.maxsize
+    for count in counted_votes.values():
+        if count < min_count:
+            min_count = count
+    eliminated = set()
+    for count in counted_votes.items():
+        if count[1] == min_count:
+            eliminated.add(count[0])
+    return eliminated
+
+def remove_eliminated(votes, eliminated):
+    for eliminated_option in eliminated:
+        for vote in votes:
+            del vote[eliminated_option]
+
+def check_meets_quota(counted_votes, quota):
+    for count in counted_votes.values():
+        if count >= quota:
+            return True
+    return False
+
+def find_highest_preference(vote, num_options):
+    highest_pref_value = num_options
+    for item in vote.items():
+        if int(item[1]) <= highest_pref_value:
+            highest_pref_value = int(item[1])
+            highest_pref = item[0]
+    return highest_pref
+
+def reset_counted_votes(options):
+    counted_votes = dict()
+    for option in options:
+        counted_votes[option] = 0
+    return counted_votes
+
+def build_count_str(votes):
+    options = get_options(votes)
+    num_options = len(options)
+    page = "The options are " + str(options) + '<br>'
+    page += "The votes are " + str(votes) + '<br>'
+    page += "The number of votes is " + str(len(votes)) + '<br>'
+    quota = int(len(votes)/2) + 1
+    page += "The quota is " + str(quota) + '<br>'
+
+    while(True):
+        counted_votes = reset_counted_votes(options)
+
+        #first round
+        for vote in votes:
+            counted_votes[find_highest_preference(vote, num_options)] += 1
+        page += "The current count is " + str(counted_votes) + '<br>'
+        if check_meets_quota(counted_votes, quota):
+            page += "Quota met" + '<br>'
+            return page
+
+        eliminated = find_eliminated(counted_votes)
+        page += "The eliminated options are " + str(eliminated) + '<br>'
+
+        remove_eliminated(votes, eliminated)
+
+        if len(votes[0]) <= 1:
+            page += "All done" + '<br>'
+            return page
+    
+        page += "The votes are " + str(votes) + '<br>'    
 
 if __name__ == "__main__":
-    #app.run()
-    #view_poll("cbc1")
-    #print(read_from_s3("cbc_april", "poll.json"))
-#    count1([{'book1': '3', 'book2': '2', 'book3': '1'}, {'book1': '1', 'book2': '2', 'book3': '3'}, {'book1': '3', 'book2': '2', 'book3': '1'}])
-    count1([{'X': '1', 'L': '2', 'C': '3', 'A': '4'}, {'L': '1', 'X': '2', 'C': '3', 'A': '4'}, {'C': '1', 'X': '2', 'L': '3', 'A': '4'}, {'L': '1', 'C': '2', 'A': '3', 'X': '4'}, {'C': '1', 'A': '2', 'L': '3', 'X': '4'}, {'A': '1', 'L': '2', 'C': '3', 'X': '4'}, {'X': '1', 'L': '2', 'A': '3', 'C': '4'}, {'L': '1', 'C': '2', 'X': '3', 'A': '4'}, {'A': '1', 'L': '2', 'X': '3', 'C': '4'}, {'L': '1', 'C': '2', 'A': '3', 'X': '4'}, {'C': '1', 'X': '2', 'A': '3', 'L': '4'}])
-
+    app.run()
 
 
