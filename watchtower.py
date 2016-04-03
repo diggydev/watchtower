@@ -1,3 +1,5 @@
+#usage python watchtower.py <s3bucket>
+
 from flask import Flask
 from flask import request
 import boto3
@@ -157,6 +159,6 @@ def build_count_str(votes):
         page += "The votes are " + str(votes) + '<br>'    
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=os.environ['PORT'])
 
 
