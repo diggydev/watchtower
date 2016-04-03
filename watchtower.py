@@ -1,4 +1,8 @@
-#usage python watchtower.py <s3bucket>
+# Requires the following env variables to be set:
+# AWS_ACCESS_KEY_ID
+# AWS_SECRET_ACCESS_KEY
+# AWS_S3_BUCKET
+# PORT
 
 from flask import Flask
 from flask import request
@@ -9,7 +13,7 @@ import os
 import sys
 
 app = Flask(__name__)
-s3bucket = sys.argv[1]
+s3bucket = os.environ['AWS_S3_BUCKET']
 
 @app.route("/")
 def hello():
