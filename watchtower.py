@@ -76,17 +76,20 @@ def vote(poll_name=None):
     
 @app.route("/count/<poll_name>")
 def count(poll_name=None):
-    votes = list()
-    s3 = boto3.resource('s3')
-    objects = s3.Bucket(s3bucket).objects.all()
-    for obj in objects:
-        if obj.key.startswith(poll_name + '/' + 'vote'):
-            voteFile = obj.key[len(poll_name + '/'):]
-            print(voteFile)
-            vote = read_from_s3(poll_name, obj.key[len(poll_name + '/'):])
-            print(vote)
-            votes.append(vote)
-    return '<html><body>' + build_count_str(votes) + '</body></html>'
+    try:
+        votes = list()
+        s3 = boto3.resource('s3')
+        objects = s3.Bucket(s3bucket).objects.all()
+        for obj in objects:
+            if obj.key.startswith(poll_name + '/' + 'vote'):
+                voteFile = obj.key[len(poll_name + '/'):]
+                print(voteFile)
+                vote = read_from_s3(poll_name, obj.key[len(poll_name + '/'):])
+                print(vote)
+                votes.append(vote)
+        return '<html><body>' + build_count_str(votes) + '</body></html>'
+    except oops:
+        return '<html><body>' + str(oops) + '</body></html>'
 
 def get_options(votes):
     options = set()
@@ -154,6 +157,7 @@ def build_count_str(votes):
         page += "The eliminated options are " + str(eliminated) + '<br>'
 
         remove_eliminated(votes, eliminated)
+        options = get_options(votes)
 
         if len(votes[0]) <= 1:
             page += "All done" + '<br>'
