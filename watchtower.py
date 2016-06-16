@@ -51,6 +51,10 @@ def read_from_s3(poll_name, remote_file):
 @app.route("/poll/<poll_name>")
 def view_poll(poll_name=None):
     options = read_from_s3(poll_name, 'poll.json')
+    dropdown = ''
+    for n in range(1, len(options) + 1):
+        dropdown = dropdown + '<option value="' + str(n) + '">' + str(n) + '</option>'
+        
     page = '''
 <html>
 <body>
@@ -59,7 +63,7 @@ def view_poll(poll_name=None):
     page = page + '''" method="get" enctype="multipart/form-data" >
 '''
     for option in options:
-        page = page + '<p>' + option + ': '+ '<input type="text" name="' + option + '"></p>'
+        page = page + '<p>' + option + ': '+ '<select name="' + option + '">' + dropdown + '</select></p>'
     page = page + '''
   <input type="submit">
 </form>
@@ -70,9 +74,16 @@ def view_poll(poll_name=None):
 
 @app.route("/vote/<poll_name>")
 def vote(poll_name=None):
-    s3 = boto3.resource('s3')
-    s3.Bucket(s3bucket).put_object(Key=poll_name + '/vote.' + str(time.time()) + '.json', Body=json.dumps(request.args))
-    return "Vote received"
+    prefs = request.args.to_dict().values()
+    unique_prefs = set()
+    for pref in prefs:
+        unique_prefs.add(pref)
+    if len(prefs) == len(unique_prefs):
+        s3 = boto3.resource('s3')
+        s3.Bucket(s3bucket).put_object(Key=poll_name + '/vote.' + str(time.time()) + '.json', Body=json.dumps(request.args))
+        return 'Vote received!'
+    else:
+        return 'You gave the same preference to more than one option. That\'s no good. <a href="/poll/' + poll_name + '">Try again!</a>'
     
 @app.route("/count/<poll_name>")
 def count(poll_name=None):
