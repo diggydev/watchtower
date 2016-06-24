@@ -1,0 +1,24 @@
+<html>
+  <head>
+    <title>Yo</title>
+    <script>
+      var poll = JSON.parse('{{ poll|tojson|safe }}');
+    </script>
+  </head>
+  <body>
+    <ul id="optionsList">
+    </ul>
+    <form action="/vote" method="post" enctype="multipart/form-data" >
+     <input type="submit"/>
+    </form>
+    <script>
+      var optionsList = document.getElementById("optionsList");
+      for(i=0; i<poll.options.length; i++) {
+        var liNode = document.createElement("li");
+        var textNode = document.createTextNode(poll.options[i]);
+        liNode.appendChild(textNode);
+        optionsList.appendChild(liNode);
+      }
+    </script>
+  </body>
+</html>

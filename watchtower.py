@@ -5,6 +5,7 @@
 
 from flask import Flask
 from flask import request
+from flask import render_template
 import boto3
 import json
 import time
@@ -36,41 +37,23 @@ def new():
 def create_poll():
     poll_name = request.args.get('poll_name', '')
     s3 = boto3.resource('s3')
-    s3.Bucket(s3bucket).put_object(Key=poll_name + '/poll.json', Body=json.dumps(request.args.get('options','').split()))
+    body_string = '{{"name": "{}", "options": {}}}'.format(poll_name, json.dumps(request.args.get('options','').split('*')))
+    s3.Bucket(s3bucket).put_object(Key=poll_name + '/poll.json', Body=body_string)
     return "Poll created at /poll/" + poll_name
 
 def read_from_s3(poll_name, remote_file):
     local_file_name = remote_file + ".tmp"
-    boto3.client('s3').download_file('watchtower123', poll_name + '/' + remote_file, local_file_name)
+    boto3.client('s3').download_file(s3bucket, poll_name + '/' + remote_file, local_file_name)
     f = open(local_file_name, "r")
     content = json.loads(f.read())
     f.close()
     os.remove(local_file_name)
     return content
 
-@app.route("/poll/<poll_name>")
+@app.route('/poll/<poll_name>')
 def view_poll(poll_name=None):
-    options = read_from_s3(poll_name, 'poll.json')
-    dropdown = ''
-    for n in range(1, len(options) + 1):
-        dropdown = dropdown + '<option value="' + str(n) + '">' + str(n) + '</option>'
-        
-    page = '''
-<html>
-<body>
-<form action="/vote/'''
-    page = page + poll_name
-    page = page + '''" method="get" enctype="multipart/form-data" >
-'''
-    for option in options:
-        page = page + '<p>' + option + ': '+ '<select name="' + option + '">' + dropdown + '</select></p>'
-    page = page + '''
-  <input type="submit">
-</form>
-</body>
-</html>
-'''
-    return page
+    poll = read_from_s3(poll_name, 'poll.json')
+    return render_template('poll.html', poll=poll)
 
 @app.route("/vote/<poll_name>")
 def vote(poll_name=None):
