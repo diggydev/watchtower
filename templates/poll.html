@@ -28,7 +28,8 @@
       <ol id="optionsList" class='sortable'>
       </ol>
       <form action="/vote" method="post" enctype="multipart/form-data" >
-        <input type="submit"/>
+        <input type='hidden' name="vote" value='' id='vote'>
+        <input type="submit" value='Submit your ranking' class='btn'>
       </form>
       <script>
         var optionsList = document.getElementById("optionsList");
