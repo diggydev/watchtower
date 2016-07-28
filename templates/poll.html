@@ -4,13 +4,14 @@
     <meta charset="UTF-8"> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href='https://fonts.googleapis.com/css?family=Bangers' rel='stylesheet' type='text/css'>
-    <link href="https://www.dropbox.com/s/1ru4nm7ewvl7a46/style.css?dl=1" rel='stylesheet' type='text/css'>
+    <link href="/static/style.css?dl=1" rel='stylesheet' type='text/css'>
     <script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
     <script src="http://code.jquery.com/ui/1.8.21/jquery-ui.min.js"></script>
-    <script src="https://www.dropbox.com/s/0n1k3k5xizggmag/jquery.ui.touch-punch.min.js?dl=1"></script>
+    <script src="/static/jquery.ui.touch-punch.min.js?dl=1"></script>
     <script>
       var poll = JSON.parse('{{ poll|tojson|safe }}');
       $( document ).ready(function() {
+      $('#pollName').val('{{ pollName }}');
         $('.sortable').sortable();
         $('.sortable').disableSelection();
         $('.sortable').on('sortstop', function( event, ui ) { storeVotes(); });
@@ -29,6 +30,7 @@
       </ol>
       <form action="/vote" method="post" enctype="multipart/form-data" >
         <input type='hidden' name="vote" value='' id='vote'>
+        <input type='hidden' name="pollName" value='' id='pollName'>
         <input type="submit" value='Submit your ranking' class='btn'>
       </form>
       <script>

@@ -53,20 +53,16 @@ def read_from_s3(poll_name, remote_file):
 @app.route('/poll/<poll_name>')
 def view_poll(poll_name=None):
     poll = read_from_s3(poll_name, 'poll.json')
-    return render_template('poll.html', poll=poll)
+    return render_template('poll.html', poll=poll, pollName=poll_name)
 
-@app.route("/vote/<poll_name>")
-def vote(poll_name=None):
-    prefs = request.args.to_dict().values()
-    unique_prefs = set()
-    for pref in prefs:
-        unique_prefs.add(pref)
-    if len(prefs) == len(unique_prefs):
-        s3 = boto3.resource('s3')
-        s3.Bucket(s3bucket).put_object(Key=poll_name + '/vote.' + str(time.time()) + '.json', Body=json.dumps(request.args))
-        return 'Vote received!'
-    else:
-        return 'You gave the same preference to more than one option. That\'s no good. <a href="/poll/' + poll_name + '">Try again!</a>'
+@app.route('/vote', methods=['POST'])
+def vote():
+    pollName = request.form['pollName']
+    print('*' + pollName)
+    prefs = str(request.form['vote'])
+    s3 = boto3.resource('s3')
+    s3.Bucket(s3bucket).put_object(Key=pollName + '/vote.' + str(time.time()) + '.dat', Body=prefs)
+    return 'Vote received!'
     
 @app.route("/count/<poll_name>")
 def count(poll_name=None):
@@ -127,7 +123,19 @@ def reset_counted_votes(options):
         counted_votes[option] = 0
     return counted_votes
 
+#temporary hack
+def convert_votes_format(votes):
+    reformattedVotes = list()
+    for prefs in votes:
+        reformattedVote = dict()
+        order = 1
+        for pref in prefs:
+            reformattedVote[pref] = order
+            order += 1
+    return reformattedVotes
+
 def build_count_str(votes):
+    votes = convert_votes_format(votes)
     options = get_options(votes)
     num_options = len(options)
     page = "The options are " + str(options) + '<br>'
