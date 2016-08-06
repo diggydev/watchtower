@@ -1,3 +1,5 @@
+import sys
+
 def get_options(votes):
     options = set()
     for vote in votes:
@@ -47,14 +49,12 @@ def build_count_str(votes):
 
     while(True):
         counted_votes = reset_counted_votes(options)
-
         for vote in votes:
             counted_votes[vote[0]] += 1
         page += "The current count is " + str(counted_votes) + '<br>'
         if check_meets_quota(counted_votes, quota):
             page += "Quota met" + '<br>'
             return page
-
         eliminated = find_eliminated(counted_votes)
         page += "The eliminated options are " + str(eliminated) + '<br>'
 
