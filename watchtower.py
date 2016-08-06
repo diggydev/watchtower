@@ -11,6 +11,7 @@ import json
 import time
 import os
 import sys
+import counter
 
 app = Flask(__name__)
 s3bucket = os.environ['AWS_S3_BUCKET']
@@ -58,7 +59,6 @@ def view_poll(poll_name=None):
 @app.route('/vote', methods=['POST'])
 def vote():
     pollName = request.form['pollName']
-    print('*' + pollName)
     prefs = str(request.form['vote'])
     s3 = boto3.resource('s3')
     s3.Bucket(s3bucket).put_object(Key=pollName + '/vote.' + str(time.time()) + '.dat', Body=prefs)
@@ -73,101 +73,11 @@ def count(poll_name=None):
         for obj in objects:
             if obj.key.startswith(poll_name + '/' + 'vote'):
                 voteFile = obj.key[len(poll_name + '/'):]
-                print(voteFile)
-                vote = read_from_s3(poll_name, obj.key[len(poll_name + '/'):])
-                print(vote)
+                vote = read_from_s3(poll_name, voteFile)
                 votes.append(vote)
-        return '<html><body>' + build_count_str(votes) + '</body></html>'
+        return '<html><body>' + counter.build_count_str(votes) + '</body></html>'
     except oops:
-        return '<html><body>' + str(oops) + '</body></html>'
-
-def get_options(votes):
-    options = set()
-    for vote in votes:
-        options.update(vote.keys())
-    return options
-
-def find_eliminated(counted_votes):
-    min_count = sys.maxsize
-    for count in counted_votes.values():
-        if count < min_count:
-            min_count = count
-    eliminated = set()
-    for count in counted_votes.items():
-        if count[1] == min_count:
-            eliminated.add(count[0])
-    return eliminated
-
-def remove_eliminated(votes, eliminated):
-    for eliminated_option in eliminated:
-        for vote in votes:
-            del vote[eliminated_option]
-
-def check_meets_quota(counted_votes, quota):
-    for count in counted_votes.values():
-        if count >= quota:
-            return True
-    return False
-
-def find_highest_preference(vote, num_options):
-    highest_pref_value = num_options
-    for item in vote.items():
-        if int(item[1]) <= highest_pref_value:
-            highest_pref_value = int(item[1])
-            highest_pref = item[0]
-    return highest_pref
-
-def reset_counted_votes(options):
-    counted_votes = dict()
-    for option in options:
-        counted_votes[option] = 0
-    return counted_votes
-
-#temporary hack
-def convert_votes_format(votes):
-    reformattedVotes = list()
-    for prefs in votes:
-        reformattedVote = dict()
-        order = 1
-        for pref in prefs:
-            reformattedVote[pref] = order
-            order += 1
-    return reformattedVotes
-
-def build_count_str(votes):
-    votes = convert_votes_format(votes)
-    options = get_options(votes)
-    num_options = len(options)
-    page = "The options are " + str(options) + '<br>'
-    page += "The votes are " + str(votes) + '<br>'
-    page += "The number of votes is " + str(len(votes)) + '<br>'
-    quota = int(len(votes)/2) + 1
-    page += "The quota is " + str(quota) + '<br>'
-
-    while(True):
-        counted_votes = reset_counted_votes(options)
-
-        #first round
-        for vote in votes:
-            counted_votes[find_highest_preference(vote, num_options)] += 1
-        page += "The current count is " + str(counted_votes) + '<br>'
-        if check_meets_quota(counted_votes, quota):
-            page += "Quota met" + '<br>'
-            return page
-
-        eliminated = find_eliminated(counted_votes)
-        page += "The eliminated options are " + str(eliminated) + '<br>'
-
-        remove_eliminated(votes, eliminated)
-        options = get_options(votes)
-
-        if len(votes[0]) <= 1:
-            page += "All done" + '<br>'
-            return page
-    
-        page += "The votes are " + str(votes) + '<br>'    
+        return '<html><body>' + str(oops) + '</body></html>'   
 
 if __name__ == "__main__":
     app.run()
-
-
